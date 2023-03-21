@@ -11,11 +11,13 @@
 from lector import * #Importamos clase que nos ayuda a leer la expresion regular/valicion
 from parseo import Parsing #Importamos clase para parseo de la expresion
 from nfa import NFA #Importamos clase Autómata Finito No-Deterministico
+from dfa import * #Importamos todo lo que contenga la clase DFA y DDFA (directo)
+from direct_reader import DirectReader
 
 #Inicio del programa (Menu)
 if __name__ == "__main__":
     print("#        Laboratorio A      # \n" )
-    print("Generador automata grafica respecto a una expresion regularpor medio de thompson")  #Imprimimos el titulo de entrada
+    print("Generador automata")  #Imprimimos el titulo de entrada
     #Definimos variables
     opt = None #opcion
     regex = None # variable para el input
@@ -28,7 +30,8 @@ if __name__ == "__main__":
         print(" Seleccione la opcion que desea ejecutar: \n" +
             "1. Validar la expresion regular  \n" + 
             "2. Conversion con el metodo de thompson\n"+
-            "3. Salir del programa \n") 
+            "3. Construcción directa de AFD\n"+
+            "4. Salir del programa \n") 
         opt = input('> ') #Input de opciones
         
         if opt == '1':
@@ -44,9 +47,9 @@ if __name__ == "__main__":
                 validarCerradura=False
                 # validar si los caracteres estan dentro de los permitidos
                 if caracter_antes in LENGUAJE:
-                    validarCerradura=True
+                    valirCerradura=True
                 else:
-                    validarCerradura1=False
+                    vadalidarCerradura1=False
                 if (posicion==0): #Valido si * esta al inicio o al final.
                     validarCerradura=False
                 else:
@@ -97,21 +100,41 @@ if __name__ == "__main__":
                     regex="("+regex+")"
                     print(regex)
                     try: 
+                        
                         reader = Lector(regex) #guardo en la variable reader la lectura del input ingresado  
                         tokens = reader.Creacion_tokens() #guardo en la var tokens la lectura aplicando la funcion crecion tockens para validar 
                         parseo = Parsing(tokens) #llevo la variable de tokens para aplicar la clase de parsin
                         exp_postfix = parseo.Parse() #llevo var parseo a ser ejecutada por funcion Parse (secuencia de tokens)
+                        
+                        #-------------------------------NEW            
+                        direct_reader = DirectReader(regex)
+                        direct_tokens = direct_reader.CreateTokens()
+                        direct_parser = Parsing(direct_tokens)
+                        direct_tree = direct_parser.Parse()
+                        
+
+
                         print("¡Aprobado! La expresion regular es correcta") #impresiones 
+                        print('\tParsed tree:', exp_postfix)
+                        validarCerradura=True
                         
                         if(str(exp_postfix)[0:1]=="("):
                             final=(str(exp_postfix)[1:-1])
                         else:
                             final=exp_postfix
-                        print('\tPostfix:', final) #impresion de expresion en postfix
+                        
+                        #-----------------------IF DEL NEW
+                        if(str(direct_tree)[0:1]=="("):
+                            final=(str(direct_tree)[1:-1])
+                        else:
+                            final=direct_tree
+
+
 
 
                     except AttributeError as ε: #si la lectura es incorrecta por paretesis
                         print("[Error] Expresion invalida (Falta parentesis, porfavor revisar tu input)")
+                        #print("Error es",ε)
                         validarCerradura=False
 
                     except Exception as ε: #si la lectura es incorrecta por simbolo no perteneciente 
@@ -119,7 +142,6 @@ if __name__ == "__main__":
                         validarCerradura=False
             else:
                 print("[Error] Expresion invalida")
-
         if opt == '2': # Opcion que tomar la expresion para conversion por thompson
             if not regex: #si no paso por la validacion lo obliga 
                 print('\n\t[ERROR 1] Asegurate de validar tu expresion regular primero')
@@ -128,7 +150,7 @@ if __name__ == "__main__":
                 print('\n\t[ERROR 2] Asegurate de validar tu expresion regular primero')
                 opt = None
             else:
-                print("# Conversion con metodo de Thompson # \n") 
+                print("# Conversion con metodo de Thompson# \n") 
                 print("Escribe la expresion regular:") # ingrese la expresion regular 
                 regex_input = input('> ') #input de la expresion regular 
 
@@ -153,7 +175,44 @@ if __name__ == "__main__":
                         print("Regresando al menu...")
                     else: 
                         print("[Error] Entrada no valida, revise porfavor")
+            validarCerradura=False
 
-        elif opt == '3': #sale del menu
+
+        if opt == '3': # Opcion que tomar la expresion para conversion por thompson
+            if not regex: #si no paso por la validacion lo obliga 
+                print('\n\t[ERROR 1] Asegurate de validar tu expresion regular primero')
+                opt = None
+            if validarCerradura==False:
+                print('\n\t[ERROR 2] Asegurate de validar tu expresion regular primero')
+                opt = None
+            else:
+                print("# Construcción directa AFD (con subconjuntos) # \n") 
+                print("Escribe la expresion regular:") # ingrese la expresion regular 
+                regex_input = input('> ') #input de la expresion regular 
+
+                ddfa = DDFA(direct_tree, direct_reader.GetSymbols(), regex_input)  #crea objeto NFA de la expresion regular 
+                ddfa_regex = ddfa.EvalRegex() #llama al metodo que generar un AFN a partir de la expresión regular proporcionada
+
+                print("¿Desea generar el diagrama de la expresion regular ingresada? [si/no]") #pregunta si quiere generar grafica
+                opt = input('> ') #input de la respuesta
+                if opt == 'si': #genera grafica 
+                    print("Espere un momento...")
+                    ddfa.GraphDFA()
+                elif opt == 'no': #no genera grafica, retorna al menu
+                    print("Regresando al menu...")
+                else: # opcion invalida, retorna a la pregunta de grafica
+                    print("[Error] Entrada no valida, revise porfavor")
+                    print("¿Desea generar el diagrama de la expresion regular ingresada? [si/no]")
+                    opt = input('> ')
+                    if opt == 'si':
+                        print("Espere un momento...")
+                        ddfa.GraphDFA()
+                    elif opt == 'no':
+                        print("Regresando al menu...")
+                    else: 
+                        print("[Error] Entrada no valida, revise porfavor")
+            validarCerradura=False
+
+        elif opt == '4': #sale del menu
             print('Has salido del menu exitosamente')
             exit(1)

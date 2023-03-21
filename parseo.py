@@ -9,60 +9,76 @@ from tokens import * #Impotamos clase tipo_token que nos ayuda a identificar
 
 #Clase de parseo para anlizar y procesar tokens de entrada 
 class Parsing:
-    def __init__(self, tokens): #inicializa la clase con una lista de tokens 
-        self.tokens = iter(tokens) #inicializa el iterador con la lista de tokes 
-        self.Next() #metodo next para leer siguiente token
+    def __init__(self, tokens):
+        self.tokens = iter(tokens)
+        self.Next()
 
-    def Next(self): #asiga el sigueinte token en la lista de tokes 
-        self.curr_token = next(self.tokens, None)
+    def Next(self):
+        try:
+            self.curr_token = next(self.tokens)
+        except StopIteration:
+            self.curr_token = None
 
-    def NewSymbol(self): #procesa los tokens que representan simpolos o letras
-        token = self.curr_token #asigan el token actual a la variable
-        if token.type == Tipo_token.IPAR: #si el token es parentesis izq
-            self.Next() #avanza al sigueinte token
-            resultado = self.Expresion() #llama la funcion recursivamente para procesar la expresion dentor del parentesis 
+    def NewSymbol(self):
+        token = self.curr_token
 
-            if self.curr_token.type != Tipo_token.DPAR: #si el token es diferente al parentesis derecho
-                #print("Error no hay parentesis derecho.")
-                raise Exception("[ERROR] No hay paréntesis derecho en la expresión") #no es valido porque no estan completos 
-            self.Next() #lee siguiente token
-            return resultado #devuelve el resultado 
+        if token.type == Tipo_token.IPAR:
+            self.Next()
+            res = self.Expression()
 
-        elif token.type == Tipo_token.LETRA: #si el tipo de token es una letra 
-            self.Next() # avanza porque si es parte del lenguaje 
-            return Letra(token.value) # se devuelve un objeto leta que representa la letra del token actual 
+            if self.curr_token.type != Tipo_token.DPAR:
+                raise Exception('No right parenthesis for expression!')
 
-    def NewOperator(self): #procesa los tokens que representan operadores 
-        resultado = self.NewSymbol() #se llama la funcion para procesar el primer simbolo o letra 
+            self.Next()
+            return res
 
-        #condicion mientras el tojen acutal no sea none y sea uno de los tipos kleen, suma o signo de interrugacion se ejecuta 
-        while self.curr_token and self.curr_token.type in (Tipo_token.KLEENE, Tipo_token.SUMA, Tipo_token.QUESTION): 
-            if self.curr_token.type == Tipo_token.KLEENE: #si es token kleene
-                self.Next() #pasa al sigiente token porque si es aceptado 
-                resultado = Kleene(resultado) # se asigna resultado a un nuevo objeto kleene que represeta la operacicon 
-            elif self.curr_token.type == Tipo_token.QUESTION:# si el token es pregunta
-                self.Next() #pasa al siguiente token porque si es aceptado 
-                resultado = Question(resultado) # se asigna resultado a un nuevo objeto que representa la operacion 
-            else: #si el token es suma 
-                self.Next() #avanza al sigueiknte token 
-                resultado = Suma(resultado) #asigna reultado a un nuevo objeto suma representado por la operacion 
+        elif token.type == Tipo_token.LETRA:
+            self.Next()
+            return Letra(token.value)
 
-        return resultado #se devueve la operacion final en objeto resultado
+    def NewOperator(self):
+        res = self.NewSymbol()
 
-    def Expresion(self): #procesar los tokens que representan una expresion
-        resultado = self.NewOperator() #se llama la funcion para procesar los tokens que represan un operador 
+        while self.curr_token != None and \
+                (
+                    self.curr_token.type == Tipo_token.KLEENE or
+                    self.curr_token.type == Tipo_token.SUMA or
+                    self.curr_token.type == Tipo_token.QUESTION
+                ):
+            if self.curr_token.type == Tipo_token.KLEENE:
+                self.Next()
+                res = Kleene(res)
+            elif self.curr_token.type == Tipo_token.QUESTION:
+                self.Next()
+                res = Question(res)
+            else:
+                self.Next()
+                res = Suma(res)
 
-        while self.curr_token and self.curr_token.type in (Tipo_token.APPEND, Tipo_token.OR): #mientras el token no sea non y sea uno de lot ipos de token appen o or se ejecuta
-            if self.curr_token.type == Tipo_token.OR: # si el token es tipo or
-                self.Next() #pasa al sigueinte token porque es acpetado 
-                resultado = Or(resultado, self.NewOperator()) #nuevo objeto que representa la operacion or
+        return res
 
-            elif self.curr_token.type == Tipo_token.APPEND: # si el token es tipo append
-                self.Next() #pasa al siguiente token porque es acpetado 
-                resultado = Append(resultado, self.NewOperator()) #nuevo objeto que representa la operacion append
+    def Expression(self):
+        res = self.NewOperator()
 
-        return resultado #se devuelve el resultado que representa la expresion final 
-    # Funcion que procesa la secuencia de tokens para construir una estructura sintáctica
-    def Parse(self):#Verificando si hay un token actual disponible para procesar
-        return self.Expresion() if self.curr_token else None #Si si hay llama la funcion Expresion que almacena en var resultad oultado
+        while self.curr_token != None and \
+                (
+                    self.curr_token.type == Tipo_token.APPEND or
+                    self.curr_token.type == Tipo_token.OR
+                ):
+            if self.curr_token.type == Tipo_token.OR:
+                self.Next()
+                res = Or(res, self.NewOperator())
 
+            elif self.curr_token.type == Tipo_token.APPEND:
+                self.Next()
+                res = Append(res, self.NewOperator())
+
+        return res
+
+    def Parse(self):
+        if self.curr_token == None:
+            return None
+
+        res = self.Expression()
+
+        return res
