@@ -13,6 +13,7 @@ from parseo import Parsing #Importamos clase para parseo de la expresion
 from nfa import NFA #Importamos clase Autómata Finito No-Deterministico
 from dfa import * #Importamos todo lo que contenga la clase DFA y DDFA (directo)
 from direct_reader import DirectReader
+from lexer import *
 
 #Inicio del programa (Menu)
 if __name__ == "__main__":
@@ -31,7 +32,8 @@ if __name__ == "__main__":
             "1. Validar la expresion regular  \n" + 
             "2. Conversion con el metodo de thompson\n"+
             "3. Construcción directa de AFD\n"+
-            "4. Salir del programa \n") 
+            "4. Lector de Yalex\n"+
+            "5. Salir del programa \n") 
         opt = input('> ') #Input de opciones
         
         if opt == '1':
@@ -92,8 +94,6 @@ if __name__ == "__main__":
                 validarConcatenacion=False
 
             if(validarCerradura==True and validarOR==True and validarConcatenacion==True): ##Si cumple las validaciones se deja continuar.
-                #if(validarCerradura==True): ##Si cumple las validaciones se deja continuar.
-                #valCerradura=regex
                 if(varpid!=varpiz):
                     print("[Error] Expresion invalida (Falta parentesis, porfavor revisar tu input)")
                 else:
@@ -128,9 +128,6 @@ if __name__ == "__main__":
                             final=(str(direct_tree)[1:-1])
                         else:
                             final=direct_tree
-
-
-
 
                     except AttributeError as ε: #si la lectura es incorrecta por paretesis
                         print("[Error] Expresion invalida (Falta parentesis, porfavor revisar tu input)")
@@ -213,6 +210,10 @@ if __name__ == "__main__":
                         print("[Error] Entrada no valida, revise porfavor")
             validarCerradura=False
 
-        elif opt == '4': #sale del menu
+        elif opt == '4': #Yalex
+            print("Realizando yalex")
+            lexermain()
+
+        elif opt == '5': #sale del menu
             print('Has salido del menu exitosamente')
             exit(1)
